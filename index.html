@@ -3,40 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 3D Satellite Live Traffic & Voice Navigation</title>
-    <!-- MapLibre 3D Vector Map Engine -->
+    <title>AI 4K Multi-Route Voice Navigation System</title>
+    <!-- MapLibre 3D Vector Engine -->
     <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
     <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
     <style>
         body { margin: 0; padding: 0; background: #000; color: #fff; font-family: 'Segoe UI', Arial, sans-serif; overflow: hidden; }
         #map { position: absolute; top: 0; bottom: 0; width: 100%; height: 100vh; }
         
-        /* Compact Floating HUD Navigation Panel */
+        /* Floating HUD Dashboard */
         .hud-panel {
             position: absolute;
-            top: 12px;
+            top: 10px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 10;
-            background: rgba(5, 12, 24, 0.88);
-            backdrop-filter: blur(12px);
-            padding: 10px 14px;
+            background: rgba(5, 12, 24, 0.90);
+            backdrop-filter: blur(16px);
+            padding: 12px;
             border-radius: 16px;
-            border: 1px solid rgba(0, 255, 204, 0.4);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.9);
+            border: 1px solid rgba(0, 255, 204, 0.5);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.95);
             width: 92%;
-            max-width: 380px;
+            max-width: 390px;
         }
 
         .hud-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
         .hud-title { font-size: 13px; font-weight: bold; color: #00ffcc; letter-spacing: 0.5px; }
-        .live-tag { background: #ff0055; color: #fff; font-size: 9px; padding: 2px 6px; border-radius: 10px; font-weight: bold; animation: pulse-red 1.5s infinite; }
+        .live-tag { background: #ff0055; color: #fff; font-size: 9px; padding: 2px 7px; border-radius: 10px; font-weight: bold; animation: pulse-red 1.2s infinite; }
         
-        /* Live City Stats Bar */
+        /* Stats Bar */
         .stats-bar {
             display: flex;
             justify-content: space-around;
-            background: rgba(0, 0, 0, 0.6);
+            background: rgba(0, 0, 0, 0.65);
             padding: 5px;
             border-radius: 8px;
             font-size: 10px;
@@ -58,7 +58,7 @@
             border-radius: 20px;
             cursor: pointer;
             width: 100%;
-            box-shadow: 0 4px 12px rgba(0, 255, 204, 0.3);
+            box-shadow: 0 4px 15px rgba(0, 255, 204, 0.4);
             transition: all 0.3s ease;
         }
         .mic-btn.listening {
@@ -68,19 +68,46 @@
         }
 
         .route-card {
-            margin-top: 6px;
-            padding: 6px 8px;
+            margin-top: 8px;
+            padding: 8px;
             background: rgba(0, 255, 204, 0.1);
-            border-radius: 8px;
-            font-size: 10px;
-            border-left: 3px solid #00ffcc;
+            border-radius: 10px;
+            font-size: 11px;
+            border: 1px solid rgba(0, 255, 204, 0.3);
             display: none;
         }
 
-        .status-box {
+        .route-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 6px 8px;
             margin-top: 6px;
+            border-radius: 6px;
+            border-left: 3px solid #00ffcc;
+        }
+
+        .nav-btn {
+            background: #00ffcc;
+            color: #000;
+            border: none;
+            padding: 4px 10px;
+            font-size: 10px;
+            font-weight: bold;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .nav-btn:hover {
+            background: #fff;
+            box-shadow: 0 0 10px #00ffcc;
+        }
+
+        .status-box {
+            margin-top: 8px;
             padding: 6px;
-            background: rgba(0, 0, 0, 0.7);
+            background: rgba(0, 0, 0, 0.75);
             border-radius: 6px;
             font-size: 10px;
             color: #e2e8f0;
@@ -88,28 +115,28 @@
             text-align: right;
         }
 
-        /* Animated Vehicle Marker Style */
-        .car-marker {
-            width: 12px;
-            height: 12px;
-            background-color: #00ffcc;
-            border: 2px solid #fff;
+        /* 3D HD Vehicle Markers */
+        .hd-car {
+            width: 14px;
+            height: 14px;
+            background: #00ffcc;
+            border: 2px solid #ffffff;
             border-radius: 50%;
-            box-shadow: 0 0 10px #00ffcc, 0 0 20px #00ffcc;
+            box-shadow: 0 0 12px #00ffcc, 0 0 24px #00ffcc;
         }
-        .car-marker-slow {
-            background-color: #ff3366;
-            box-shadow: 0 0 10px #ff3366;
+        .hd-car-slow {
+            background: #ff3366;
+            box-shadow: 0 0 12px #ff3366, 0 0 24px #ff3366;
         }
 
         @keyframes pulse-mic {
-            0% { box-shadow: 0 0 0 0 rgba(255, 0, 85, 0.7); }
-            70% { box-shadow: 0 0 0 10px rgba(255, 0, 85, 0); }
+            0% { box-shadow: 0 0 0 0 rgba(255, 0, 85, 0.8); }
+            70% { box-shadow: 0 0 0 12px rgba(255, 0, 85, 0); }
             100% { box-shadow: 0 0 0 0 rgba(255, 0, 85, 0); }
         }
         @keyframes pulse-red {
             0% { opacity: 1; }
-            50% { opacity: 0.4; }
+            50% { opacity: 0.3; }
             100% { opacity: 1; }
         }
     </style>
@@ -118,11 +145,10 @@
 
 <div class="hud-panel">
     <div class="hud-header">
-        <div class="hud-title">🛰️ SATELLITE LIVE 3D TRAFFIC</div>
-        <div class="live-tag">LIVE MOVING CARS</div>
+        <div class="hud-title">🛰️ 4K ULTRA-HD ROUTE NAVIGATION</div>
+        <div class="live-tag">LIVE SIMULATION</div>
     </div>
     
-    <!-- Live Roads Dashboard Stat -->
     <div class="stats-bar">
         <div class="stat-item">Total Roads<span>57</span></div>
         <div class="stat-item stat-open">Khuli Hain<span>27</span></div>
@@ -135,57 +161,57 @@
     <div class="route-card" id="routeDetails"></div>
 
     <div class="status-box" id="status">
-        Misaal: <b>"Centaurus Mall jana hai"</b> ya <b>"Express Highway ka rasta batao"</b>
+        Misaal: <b>"Faisal Town se Centaurus jana hai"</b> ya <b>"Expressway ka rasta batao"</b>
     </div>
 </div>
 
 <div id="map"></div>
 
 <script>
-    // Initialize Real 3D Satellite Map Engine
+    // High-Resolution 4K Hybrid Satellite Source
     const map = new maplibregl.Map({
         container: 'map',
         style: {
             'version': 8,
             'sources': {
-                'raster-tiles': {
+                '4k-satellite': {
                     'type': 'raster',
                     'tiles': [
-                        'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+                        'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}'
                     ],
                     'tileSize': 256,
-                    'attribution': 'Esri World Imagery'
+                    'maxzoom': 20
                 }
             },
             'layers': [
                 {
-                    'id': 'simple-tiles',
+                    'id': '4k-sat-layer',
                     'type': 'raster',
-                    'source': 'raster-tiles',
+                    'source': '4k-satellite',
                     'minzoom': 0,
-                    'maxzoom': 19
+                    'maxzoom': 20
                 }
             ]
         },
-        center: [73.0551, 33.7077], // Centaurus / Jinnah Avenue Islamabad
-        zoom: 15.8,
-        pitch: 65,
+        center: [73.0551, 33.7077], // Centaurus Islamabad
+        zoom: 15.5,
+        pitch: 60,
         bearing: -15
     });
 
-    // Add Simulated Moving Vehicles on Roads (Live Traffic Movement)
+    // Vehicle Traffic Simulation Setup
     const carCoordinates = [
-        { start: [73.0500, 33.7070], end: [73.0600, 33.7085], speed: 0.00003, color: 'normal' },
-        { start: [73.0520, 33.7050], end: [73.0580, 33.7100], speed: 0.000015, color: 'slow' },
-        { start: [73.0560, 33.7090], end: [73.0510, 33.7060], speed: 0.000025, color: 'normal' }
+        { start: [73.0500, 33.7070], end: [73.0600, 33.7085], speed: 0.000025, color: 'normal' },
+        { start: [73.0520, 33.7050], end: [73.0580, 33.7100], speed: 0.000010, color: 'slow' },
+        { start: [73.0560, 33.7090], end: [73.0510, 33.7060], speed: 0.000020, color: 'normal' }
     ];
 
     const carMarkers = [];
 
     map.on('load', () => {
-        carCoordinates.forEach((car, index) => {
+        carCoordinates.forEach((car) => {
             const el = document.createElement('div');
-            el.className = car.color === 'slow' ? 'car-marker car-marker-slow' : 'car-marker';
+            el.className = car.color === 'slow' ? 'hd-car hd-car-slow' : 'hd-car';
             
             const marker = new maplibregl.Marker(el)
                 .setLngLat(car.start)
@@ -193,7 +219,6 @@
 
             carMarkers.push({
                 marker: marker,
-                current: [...car.start],
                 start: car.start,
                 end: car.end,
                 speed: car.speed,
@@ -204,7 +229,6 @@
         animateVehicles();
     });
 
-    // Smooth Vehicle Movement Loop
     function animateVehicles() {
         carMarkers.forEach(c => {
             c.progress += c.speed;
@@ -219,41 +243,29 @@
         requestAnimationFrame(animateVehicles);
     }
 
-    // Knowledge Base for Dynamic Navigation
+    // Comprehensive Dynamic Route DB with Navigation Coordinates
     const locationsDB = {
+        'faisal-town': {
+            name: "Faisal Town (F-18) to Centaurus Mall",
+            coords: [73.0551, 33.7077],
+            routes: [
+                { id: 'r1', name: "Srinagar Highway", distance: "18 KM", time: "20 Mins", status: "🟢 FAST / NO RUSH", target: [73.0300, 33.6900], speech: "Srinagar Highway ka rasta 18 kilometer ka hai aur rash bilkul nahi hai." },
+                { id: 'r2', name: "GT Road / Expressway", distance: "22 KM", time: "32 Mins", status: "🔴 HEAVY SIGNAL TRAFFIC", target: [72.9800, 33.6400], speech: "GT Road par signals ki वजह se 32 minut lagenge." }
+            ],
+            speech: "Faisal Town se Centaurus jaane ke liye do raste hain. Srinagar Highway best hai jahan 20 minut lagenge. Aap kaunsa rasta select karna chahte hain?"
+        },
         'centaurus': {
             name: "Centaurus Mall (Jinnah Avenue)",
             coords: [73.0551, 33.7077],
-            zoom: 16.5,
             routes: [
-                { name: "Main Jinnah Avenue", distance: "2.5 KM", time: "5 Mins", status: "🟢 CLEAR & LIVE TRAFFIC MOVING" },
-                { name: "Faisal Avenue Flyover", distance: "3.1 KM", time: "8 Mins", status: "🟡 MODERATE TRAFFIC AT SIGNAL" }
+                { id: 'r1', name: "Main Jinnah Avenue", distance: "2.5 KM", time: "5 Mins", status: "🟢 ALL CLEAR", target: [73.0551, 33.7077], speech: "Jinnah Avenue bilkul khula hai." },
+                { id: 'r2', name: "Faisal Avenue Flyover", distance: "3.1 KM", time: "8 Mins", status: "🟡 MODERATE TRAFFIC", target: [73.0580, 33.7020], speech: "Faisal Avenue Flyover par thoda traffic hai." }
             ],
-            speech: "Centaurus Mall ke liye Jinnah Avenue wala rasta bilkul khula hai aur traffic smooth chal rahi hai. Faisal Avenue flyover par thoda signal rush hai."
-        },
-        'expressway': {
-            name: "Islamabad Express Highway (DHA Phase 1/2)",
-            coords: [73.1000, 33.6200],
-            zoom: 14.5,
-            routes: [
-                { name: "Main Expressway", distance: "18 KM", time: "35 Mins", status: "🔴 HEAVY EVENING RUSH / SLOW TRAFFIC" },
-                { name: "Service Road Alternate", distance: "19.5 KM", time: "22 Mins", status: "🟢 RECOMMENDED (SAVINGS: 13 MINS)" }
-            ],
-            speech: "Islamabad Express Highway par sham ke waqt signal aur rush ki wajah se 35 minut lagenge. Hamara mashwara hai ke aap Service Road ka rasta istemal karein jisse aap ke 13 minut bachein ge."
-        },
-        'murree': {
-            name: "Murree Road (Islamabad to Murree)",
-            coords: [73.1582, 33.7297],
-            zoom: 14.0,
-            routes: [
-                { name: "Route 1: Expressway", distance: "38 KM", time: "45 Mins", status: "🟢 CLEAR & OPEN" },
-                { name: "Route 2: Old Toll Plaza", distance: "42 KM", time: "55 Mins", status: "🟡 UNDER CONSTRUCTION" }
-            ],
-            speech: "Murree Road ke Expressway raste par traffic normal hai. Old Toll Plaza par repair work chal raha hai."
+            speech: "Centaurus Mall ke liye Jinnah Avenue aur Faisal Flyover dono raste khule hain."
         }
     };
 
-    // Voice Engine Setup
+    // Voice Engine
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     let recognition;
     let isListening = false;
@@ -267,18 +279,12 @@
             isListening = true;
             document.getElementById('micBtn').classList.add('listening');
             document.getElementById('micBtn').innerText = '👂 Sun raha hoon... Bolain';
-            document.getElementById('status').innerText = 'Recording voice command...';
         };
 
         recognition.onresult = (event) => {
             const transcript = event.results[0][0].transcript;
             document.getElementById('status').innerHTML = `Aapne kaha: <b>"${transcript}"</b>`;
             processCommand(transcript);
-        };
-
-        recognition.onerror = () => {
-            document.getElementById('status').innerText = 'Awaaz samajh nahi aayi, dobara boliye.';
-            stopListening();
         };
 
         recognition.onend = () => { stopListening(); };
@@ -299,30 +305,57 @@
         const text = cmd.toLowerCase();
 
         let match = locationsDB['centaurus'];
-        if (text.includes('ایکسپریس') || text.includes('expressway') || text.includes('دھابی') || text.includes('dha')) match = locationsDB['expressway'];
-        else if (text.includes('مری') || text.includes('murree')) match = locationsDB['murree'];
+        if (text.includes('فیصل') || text.includes('faisal town') || text.includes('سری نگر') || text.includes('srinagar')) {
+            match = locationsDB['faisal-town'];
+        }
 
-        // Dynamic 3D Camera Navigation Animation
+        displayRoutes(match);
+        speakOut(match.speech);
+    }
+
+    function displayRoutes(match) {
         map.flyTo({
             center: match.coords,
-            zoom: match.zoom,
-            pitch: 65,
-            bearing: -20,
-            speed: 1.2,
-            curve: 1.4
+            zoom: 14.5,
+            pitch: 60,
+            bearing: -15,
+            speed: 1.2
         });
 
-        // Display Route Calculation Card
         const routeCard = document.getElementById('routeDetails');
         routeCard.style.display = 'block';
-        let html = `<b>📍 ${match.name}</b><br>`;
+        
+        let html = `<b style="color:#00ffcc;">📍 ${match.name}</b>`;
+        
         match.routes.forEach(r => {
-            html += `<div style="margin-top:4px;"><b>${r.name}:</b> ${r.distance} | ${r.time} <br><small>${r.status}</small></div>`;
+            html += `
+                <div class="route-item">
+                    <div>
+                        <b>${r.name}</b><br>
+                        <small>${r.distance} | ${r.time} (${r.status})</small>
+                    </div>
+                    <button class="nav-btn" onclick="startNavigation('${r.name}', [${r.target}], '${r.speech}')">NAVIGATE</button>
+                </div>
+            `;
         });
+        
         routeCard.innerHTML = html;
+    }
 
-        // Speak Natural Voice
-        speakOut(match.speech);
+    // Dynamic Single-Route Navigation Mode
+    function startNavigation(routeName, coords, speechText) {
+        document.getElementById('status').innerHTML = `🚀 Navigation Active: <b>${routeName}</b>`;
+        
+        map.flyTo({
+            center: coords,
+            zoom: 17.5,
+            pitch: 70,
+            bearing: -30,
+            speed: 1.4,
+            curve: 1.5
+        });
+
+        speakOut(`Navigation shuru kar di gayi hai. ${speechText}`);
     }
 
     function speakOut(text) {
@@ -339,4 +372,4 @@
 </script>
 
 </body>
-    </html>
+            </html>
