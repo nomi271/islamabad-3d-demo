@@ -3,121 +3,201 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Real Road Snap Navigation</title>
+    <title>Islamabad Ultra 4K Route Navigation</title>
     <!-- MapLibre Engine -->
     <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
     <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
     <style>
-        body { margin: 0; padding: 0; background: #000; color: #fff; font-family: 'Segoe UI', Arial, sans-serif; overflow: hidden; }
+        body { margin: 0; padding: 0; background: #080B10; color: #fff; font-family: 'Segoe UI', system-ui, sans-serif; overflow: hidden; }
         #map { position: absolute; top: 0; bottom: 0; width: 100%; height: 100vh; }
         
+        /* Floating Dashboard HUD */
         .hud-panel {
             position: absolute;
-            top: 12px;
+            top: 10px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 10;
-            background: rgba(8, 15, 30, 0.95);
+            background: rgba(8, 14, 26, 0.95);
             backdrop-filter: blur(20px);
-            padding: 12px;
-            border-radius: 16px;
-            border: 1px solid rgba(0, 255, 204, 0.6);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 12px 14px;
+            border-radius: 18px;
+            border: 1px solid rgba(0, 255, 204, 0.5);
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.9);
             width: 92%;
-            max-width: 390px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.9);
+            max-width: 400px;
         }
 
-        .hud-title { font-size: 13px; font-weight: bold; color: #00ffcc; text-align: center; margin-bottom: 8px; }
+        .hud-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .hud-title { font-size: 12px; font-weight: 800; color: #00ffcc; letter-spacing: 0.5px; text-transform: uppercase; }
+        .live-tag { background: #ff0055; color: #fff; font-size: 8px; padding: 3px 7px; border-radius: 10px; font-weight: bold; animation: blink 1s infinite; }
+        
+        /* Stats Dashboard Bar */
+        .stats-bar {
+            display: flex;
+            justify-content: space-between;
+            background: rgba(0, 0, 0, 0.65);
+            padding: 6px 8px;
+            border-radius: 10px;
+            font-size: 9px;
+            margin-bottom: 8px;
+            border: 1px solid rgba(0, 255, 204, 0.2);
+            text-align: center;
+        }
+        .stat-item span { display: block; font-weight: 800; font-size: 11px; margin-top: 1px; }
+        .stat-open { color: #00ffcc; }
+        .stat-closed { color: #ff3366; }
+        .stat-const { color: #ffbb00; }
+
+        .mic-btn {
+            background: linear-gradient(135deg, #00ffcc 0%, #0088ff 100%);
+            color: #000;
+            border: none;
+            padding: 10px;
+            font-size: 12px;
+            font-weight: 800;
+            border-radius: 20px;
+            cursor: pointer;
+            width: 100%;
+            box-shadow: 0 4px 15px rgba(0, 255, 204, 0.35);
+            margin-bottom: 8px;
+        }
+
+        .route-card {
+            background: rgba(0, 0, 0, 0.45);
+            padding: 8px;
+            border-radius: 10px;
+            border: 1px solid rgba(0, 255, 204, 0.2);
+        }
 
         .route-option {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: rgba(255, 255, 255, 0.05);
-            padding: 8px 10px;
-            margin-top: 6px;
+            background: rgba(255, 255, 255, 0.04);
+            padding: 8px;
+            margin-top: 5px;
             border-radius: 8px;
             border-left: 4px solid #00ffcc;
         }
+        .route-option.alt { border-left-color: #ffaa00; }
 
         .nav-btn {
             background: #00ffcc;
             color: #000;
             border: none;
-            padding: 6px 14px;
-            font-size: 11px;
-            font-weight: bold;
-            border-radius: 15px;
+            padding: 6px 12px;
+            font-size: 10px;
+            font-weight: 800;
+            border-radius: 14px;
             cursor: pointer;
-            box-shadow: 0 0 10px rgba(0, 255, 204, 0.6);
+            box-shadow: 0 0 10px rgba(0, 255, 204, 0.5);
         }
 
-        /* Google Map Style Navigation Cursor */
+        /* Google Style Navigation Marker Cursor */
         .nav-cursor {
-            width: 24px;
-            height: 24px;
+            width: 26px;
+            height: 26px;
             background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%2300ffcc"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg>');
             background-size: cover;
             filter: drop-shadow(0px 0px 8px #00ffcc);
         }
+
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
     </style>
 </head>
 <body>
 
 <div class="hud-panel">
-    <div class="hud-title">🗺️ ISLAMABAD REAL-ROAD NAVIGATION</div>
-
-    <div class="route-option">
-        <div>
-            <b style="color: #fff; font-size: 12px;">Srinagar Highway</b><br>
-            <small style="color: #00ffcc;">Real Road Alignment</small>
-        </div>
-        <button class="nav-btn" onclick="drawRealRoadRoute([72.8800, 33.6100], [73.0551, 33.7077], '#00ffcc')">NAVIGATE</button>
+    <div class="hud-header">
+        <div class="hud-title">⚡ 4K ULTRA ROUTE NAVIGATION</div>
+        <div class="live-tag">LIVE SIMULATION</div>
+    </div>
+    
+    <!-- Top Stats Board -->
+    <div class="stats-bar">
+        <div class="stat-item">Total Roads<span>57</span></div>
+        <div class="stat-item stat-open">Khuli Hain<span>27</span></div>
+        <div class="stat-item stat-closed">Band Hain<span>20</span></div>
+        <div class="stat-item stat-const">Work In Progress<span>10</span></div>
     </div>
 
-    <div class="route-option" style="border-left-color: #ffaa00;">
-        <div>
-            <b style="color: #fff; font-size: 12px;">GT Road / Highway</b><br>
-            <small style="color: #ffaa00;">Alternate Real Route</small>
+    <button class="mic-btn" onclick="startNavigation('srinagar')">🎙️ Awaaz Se Rasta Poochhein</button>
+
+    <div class="route-card">
+        <b style="color: #00ffcc; font-size: 11px;">📍 Faisal Town to Centaurus Mall:</b>
+        
+        <div class="route-option">
+            <div>
+                <b style="color: #fff; font-size: 11px;">Srinagar Highway</b><br>
+                <small style="color: #00ffcc;">18 KM | 20 Mins (FAST / NO RUSH)</small>
+            </div>
+            <button class="nav-btn" onclick="startNavigation('srinagar')">NAVIGATE</button>
         </div>
-        <button class="nav-btn" style="background:#ffaa00;" onclick="drawRealRoadRoute([72.9500, 33.6000], [73.0551, 33.7077], '#ffaa00')">NAVIGATE</button>
+
+        <div class="route-option alt">
+            <div>
+                <b style="color: #fff; font-size: 11px;">GT Road / Expressway</b><br>
+                <small style="color: #ffaa00;">22 KM | 32 Mins (HEAVY TRAFFIC)</small>
+            </div>
+            <button class="nav-btn" style="background:#ffaa00;" onclick="startNavigation('gt')">NAVIGATE</button>
+        </div>
     </div>
 </div>
 
 <div id="map"></div>
 
 <script>
-    // Google Satellite HD Map
+    // MapLibre Vector Map Engine
     const map = new maplibregl.Map({
         container: 'map',
         style: {
             'version': 8,
             'sources': {
-                'google-sat': {
+                'carto-voyager': {
                     'type': 'raster',
-                    'tiles': ['https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}'],
+                    'tiles': ['https://basemaps.cartocdn.com/rastertiles/voyager_labels_under/{z}/{x}/{y}@2x.png'],
                     'tileSize': 256,
                     'maxzoom': 20
                 }
             },
             'layers': [{
-                'id': 'google-sat-layer',
+                'id': 'base-layer',
                 'type': 'raster',
-                'source': 'google-sat',
+                'source': 'carto-voyager',
                 'minzoom': 0,
                 'maxzoom': 20
             }]
         },
         center: [72.9800, 33.6600],
-        zoom: 12.5,
-        pitch: 45
+        zoom: 12,
+        pitch: 50
     });
 
-    let navMarker = null;
+    // Coordinates along actual roads
+    const srinagarWaypoints = [
+        [72.8850, 33.6150], // Faisal Town
+        [72.9320, 33.6280], // Tarnol Link Road
+        [72.9750, 33.6500], // Srinagar Hwy Entrance
+        [73.0180, 33.6750], // G-13 Junction
+        [73.0450, 33.6920], // Zero Point
+        [73.0551, 33.7077]  // Centaurus Mall
+    ];
+
+    const gtWaypoints = [
+        [72.8850, 33.6150], // Faisal Town
+        [72.9500, 33.5900], // GT Road
+        [73.0200, 33.6300], // Rawalpindi Link
+        [73.0700, 33.6700], // Expressway
+        [73.0551, 33.7077]  // Centaurus Mall
+    ];
+
+    let currentMarker = null;
 
     map.on('load', () => {
-        // Prepare GeoJSON Source for exact road snapping
-        map.addSource('real-road-source', {
+        // GeoJSON source for real road line
+        map.addSource('route-source', {
             'type': 'geojson',
             'data': {
                 'type': 'Feature',
@@ -125,59 +205,78 @@
             }
         });
 
-        // Add Google-like Glow Line on top of roads
+        // Glowing Road Polyline Layer
         map.addLayer({
-            'id': 'real-road-layer',
+            'id': 'route-layer',
             'type': 'line',
-            'source': 'real-road-source',
+            'source': 'route-source',
             'layout': { 'line-join': 'round', 'line-cap': 'round' },
             'paint': {
                 'line-color': '#00ffcc',
                 'line-width': 7,
-                'line-opacity': 0.9
+                'line-opacity': 0.95
             }
         });
 
-        // Add Navigation Cursor Marker
-        const cursorEl = document.createElement('div');
-        cursorEl.className = 'nav-cursor';
-        navMarker = new maplibregl.Marker(cursorEl).setLngLat([72.8800, 33.6100]).addTo(map);
+        // Navigation Cursor
+        const el = document.createElement('div');
+        el.className = 'nav-cursor';
+        currentMarker = new maplibregl.Marker(el).setLngLat(srinagarWaypoints[0]).addTo(map);
     });
 
-    // Fetch Actual Road Routing from OpenStreetMap Routing API
-    async function drawRealRoadRoute(startCoords, endCoords, lineColor) {
-        const url = `https://router.project-osrm.org/route/v1/driving/${startCoords[0]},${startCoords[1]};${endCoords[0]},${endCoords[1]}?overview=full&geometries=geojson`;
+    // OSRM Routing Engine for Exact Snap-to-Road
+    async function loadSnappedRoute(waypoints, color) {
+        const coordsStr = waypoints.map(p => `${p[0]},${p[1]}`).join(';');
+        const url = `https://router.project-osrm.org/route/v1/driving/${coordsStr}?overview=full&geometries=geojson`;
 
         try {
-            const response = await fetch(url);
-            const data = await response.json();
+            const res = await fetch(url);
+            const data = await res.json();
 
-            if (data.routes && data.routes.length > 0) {
-                const routeGeometry = data.routes[0].geometry;
+            if (data.routes && data.routes[0]) {
+                const geom = data.routes[0].geometry;
 
-                // Update Line to follow EXACT roads
-                map.getSource('real-road-source').setData({
+                // Update Line to fit road exactly
+                map.getSource('route-source').setData({
                     'type': 'Feature',
-                    'geometry': routeGeometry
+                    'geometry': geom
                 });
 
-                map.setPaintProperty('real-road-layer', 'line-color', lineColor);
+                map.setPaintProperty('route-layer', 'line-color', color);
 
-                // Move Navigation Marker to starting point of road
-                navMarker.setLngLat(routeGeometry.coordinates[0]);
+                // Move Navigation Marker
+                const startPoint = geom.coordinates[0];
+                currentMarker.setLngLat(startPoint);
 
-                // Smoothly Zoom & Tilt onto the starting road
+                // Tilt and Zoom Camera on Road
                 map.flyTo({
-                    center: routeGeometry.coordinates[0],
+                    center: startPoint,
                     zoom: 15.5,
                     pitch: 60,
                     bearing: 20,
                     speed: 1.2
                 });
             }
-        } catch (error) {
-            console.error("Routing error:", error);
+        } catch (e) {
+            console.error("Routing Error:", e);
         }
+    }
+
+    function startNavigation(type) {
+        if (type === 'srinagar') {
+            loadSnappedRoute(srinagarWaypoints, '#00ffcc');
+            speakUrdu("Srinagar Highway par navigation active kar di gayi hai.");
+        } else {
+            loadSnappedRoute(gtWaypoints, '#ffaa00');
+            speakUrdu("GT Road Expressway par navigation active kar di gayi hai.");
+        }
+    }
+
+    function speakUrdu(text) {
+        window.speechSynthesis.cancel();
+        const msg = new SpeechSynthesisUtterance(text);
+        msg.lang = 'ur-PK';
+        window.speechSynthesis.speak(msg);
     }
 </script>
 
