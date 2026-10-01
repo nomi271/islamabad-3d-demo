@@ -3,96 +3,170 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Islamabad 3D Voice Navigation Demo</title>
-    <!-- Leaflet & OpenStreetMap 3D Free Libraries -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <title>AI Dynamic 3D Voice Navigation System</title>
+    <!-- MapLibre 3D Vector Map Engine -->
+    <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+    <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
     <style>
-        body { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; background: #000; color: #fff; }
-        #map { position: absolute; top: 0; bottom: 0; width: 100%; height: 100vh; z-index: 1; }
+        body { margin: 0; padding: 0; background: #050b14; color: #fff; font-family: 'Segoe UI', Arial, sans-serif; }
+        #map { position: absolute; top: 0; bottom: 0; width: 100%; height: 100vh; }
         
-        .overlay {
+        /* Floating HUD Navigation Overlay */
+        .hud-panel {
             position: absolute;
-            top: 20px;
+            top: 10px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 10;
-            background: rgba(0, 0, 0, 0.85);
-            padding: 18px;
-            border-radius: 16px;
-            border: 2px solid #00ffcc;
-            box-shadow: 0 0 20px rgba(0, 255, 204, 0.4);
-            width: 85%;
-            max-width: 360px;
+            background: rgba(10, 18, 32, 0.92);
+            backdrop-filter: blur(14px);
+            padding: 14px;
+            border-radius: 18px;
+            border: 1px solid rgba(0, 255, 204, 0.4);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.85);
+            width: 90%;
+            max-width: 400px;
+        }
+
+        .hud-header { display: flex; justify-space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px; margin-bottom: 8px; }
+        .hud-title { font-size: 14px; font-weight: bold; color: #00ffcc; letter-spacing: 0.5px; }
+        
+        /* Live City Stats Bar */
+        .stats-bar {
+            display: flex;
+            justify-content: space-around;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 6px;
+            border-radius: 10px;
+            font-size: 10px;
+            margin-bottom: 10px;
             text-align: center;
         }
-        h2 { margin: 0 0 6px 0; font-size: 20px; color: #00ffcc; }
-        p { font-size: 13px; margin: 0 0 12px 0; color: #ccc; }
-        
+        .stat-item span { display: block; font-weight: bold; font-size: 12px; }
+        .stat-open { color: #00ffcc; }
+        .stat-closed { color: #ff3366; }
+        .stat-const { color: #ffbb00; }
+
         .mic-btn {
-            background: #00ffcc;
+            background: linear-gradient(135deg, #00ffcc 0%, #0088ff 100%);
             color: #000;
             border: none;
-            padding: 14px 20px;
-            font-size: 16px;
+            padding: 12px;
+            font-size: 15px;
             font-weight: bold;
-            border-radius: 30px;
+            border-radius: 25px;
             cursor: pointer;
             width: 100%;
-            transition: 0.3s;
+            box-shadow: 0 4px 15px rgba(0, 255, 204, 0.3);
+            transition: all 0.3s ease;
         }
-        .mic-btn.listening { background: #ff3366; color: #fff; animation: pulse 1.2s infinite; }
-        
-        .status-box {
-            margin-top: 12px;
-            padding: 10px;
-            background: #111;
-            border-radius: 8px;
-            font-size: 13px;
-            border-left: 3px solid #00ffcc;
+        .mic-btn.listening {
+            background: linear-gradient(135deg, #ff0055 0%, #ff5500 100%);
             color: #fff;
-            text-align: right;
+            animation: pulse 1s infinite;
+        }
+
+        .route-card {
+            margin-top: 8px;
+            padding: 8px 10px;
+            background: rgba(0, 255, 204, 0.08);
+            border-radius: 8px;
+            font-size: 11px;
+            border-left: 3px solid #00ffcc;
+            display: none;
+        }
+
+        .status-box {
+            margin-top: 8px;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 8px;
+            font-size: 11px;
+            color: #e2e8f0;
             direction: rtl;
+            text-align: right;
         }
 
         @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(255, 51, 102, 0.7); }
-            70% { box-shadow: 0 0 0 15px rgba(255, 51, 102, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(255, 51, 102, 0); }
+            0% { box-shadow: 0 0 0 0 rgba(255, 0, 85, 0.7); }
+            70% { box-shadow: 0 0 0 12px rgba(255, 0, 85, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 0, 85, 0); }
         }
     </style>
 </head>
 <body>
 
-<div class="overlay">
-    <h2>3D Traffic Voice System</h2>
-    <p>اسلام آباد نیویگیشن (زیرو کاسٹ ڈیمو)</p>
+<div class="hud-panel">
+    <div class="hud-header">
+        <div class="hud-title">📡 AI REAL-TIME VOICE NAVIGATION</div>
+    </div>
     
-    <button class="mic-btn" id="micBtn" onclick="toggleVoice()">🎙️ وائس کمانڈ دیں</button>
-    
+    <!-- Live Roads Dashboard Stat -->
+    <div class="stats-bar">
+        <div class="stat-item">Total Roads<span>57</span></div>
+        <div class="stat-item stat-open">Khuli Hain<span>27</span></div>
+        <div class="stat-item stat-closed">Band Hain<span>20</span></div>
+        <div class="stat-item stat-const">Work In Progress<span>10</span></div>
+    </div>
+
+    <button class="mic-btn" id="micBtn" onclick="toggleVoice()">🎙️ Awaaz Se Rasta Poochhein</button>
+
+    <div class="route-card" id="routeDetails">
+        <!-- Dynamic Route Calculation Appears Here -->
+    </div>
+
     <div class="status-box" id="status">
-        سیٹ اپ تیار ہے۔ بٹن دبا کر بولیں: <br><b>"راستوں کا کیا حال ہے؟"</b> یا <b>"نائنتھ ایونیو جانا ہے"</b>
+        Misaal: <b>"Murree Road jana hai"</b> ya <b>"Lahore Anarkali Market ka rasta batao"</b>
     </div>
 </div>
 
 <div id="map"></div>
 
 <script>
-    // Initialize Map on Islamabad Coordinates
-    const map = L.map('map').setView([33.6844, 73.0479], 13);
+    // Initialize 3D Vector Map Engine
+    const map = new maplibregl.Map({
+        container: 'map',
+        style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
+        center: [73.0479, 33.6844], // Default Islamabad
+        zoom: 12.5,
+        pitch: 60,
+        bearing: -10
+    });
 
-    // Free OpenStreetMap Tile Layer (No Key Required)
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '© OpenStreetMap'
-    }).addTo(map);
+    // Simulated Knowledge Base for Locations & Routes
+    const locationsDB = {
+        'murree': {
+            name: "Murree Road (Islamabad to Murree)",
+            coords: [73.1582, 33.7297],
+            zoom: 13.5,
+            routes: [
+                { name: "Route 1: Via Expressway", distance: "38 KM", time: "45 Mins", status: "🟢 CLEAR & OPEN" },
+                { name: "Route 2: Via Old Toll Plaza", distance: "42 KM", time: "55 Mins", status: "🟡 UNDER CONSTRUCTION (SLOW)" }
+            ],
+            speech: "Murree Road ke do raste hain. Pehla Expressway wala rasta 38 kilometer ka hai aur bilkul khula hai. Dusra purana Toll Plaza rasta 42 kilometer ka hai jahan construction work chal raha hai."
+        },
+        'lahore': {
+            name: "Anarkali Market Lahore",
+            coords: [74.3142, 31.5727],
+            zoom: 14.5,
+            routes: [
+                { name: "Route 1: M-2 Motorway", distance: "365 KM", time: "4 Hours 15 Mins", status: "🟢 ALL CLEAR" },
+                { name: "Route 2: GT Road", distance: "290 KM", time: "5 Hours 30 Mins", status: "🔴 HEAVY TRAFFIC / CLOSURES" }
+            ],
+            speech: "Lahore Anarkali Market ke liye Motorway M-2 rasta 365 kilometer ka hai aur bilkul saf hai. GT Road par congestion aur diversions hain."
+        },
+        'islamabad': {
+            name: "Islamabad Sector Routes Summary",
+            coords: [73.0479, 33.6844],
+            zoom: 12.5,
+            routes: [
+                { name: "Overall Status", distance: "57 Total Roads", time: "Live Sync", status: "27 Open | 20 Closed | 10 Work" }
+            ],
+            speech: "Islamabad ke kul 57 main roads me se 27 khuli hain, 20 par containers ya diversions hain, aur 10 par repair work chal raha hai. Aap kis specific jagah jana chahte hain?"
+        }
+    };
 
-    // Add Islamabad Markers (Routes)
-    const ninetheAvenue = L.marker([33.6685, 73.0551]).addTo(map).bindPopup("<b>نائنتھ ایونیو (9th Avenue)</b><br><span style='color:red;'>کنٹینر بلاکیج - بند ہے</span>");
-    const srinagarHwy = L.marker([33.6701, 73.0189]).addTo(map).bindPopup("<b>سری نگر ہائی وے</b><br><span style='color:green;'>راستہ مکمل کھلا ہے</span>");
-    const blueArea = L.marker([33.7118, 73.0581]).addTo(map).bindPopup("<b>بلو ایریا اسلام آباد</b><br><span style='color:red;'>رش / بندش</span>");
-
-    // Native Browser Speech Recognition
+    // Voice Engine with Natural Speech Tuning
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     let recognition;
     let isListening = false;
@@ -105,24 +179,22 @@
         recognition.onstart = () => {
             isListening = true;
             document.getElementById('micBtn').classList.add('listening');
-            document.getElementById('micBtn').innerText = '👂 سن رہا ہوں... بولیں';
-            document.getElementById('status').innerText = 'آواز ریکارڈ ہو رہی ہے...';
+            document.getElementById('micBtn').innerText = '👂 Sun raha hoon... Bolain';
+            document.getElementById('status').innerText = 'Recording voice command...';
         };
 
         recognition.onresult = (event) => {
             const transcript = event.results[0][0].transcript;
-            document.getElementById('status').innerHTML = `آپ نے کہا: <b>"${transcript}"</b>`;
+            document.getElementById('status').innerHTML = `Aapne kaha: <b>"${transcript}"</b>`;
             processCommand(transcript);
         };
 
         recognition.onerror = () => {
-            document.getElementById('status').innerText = 'آواز سمجھ نہیں آئی، دوبارہ کوشش کریں۔';
+            document.getElementById('status').innerText = 'Awaaz samajh nahi aayi, dobara boliye.';
             stopListening();
         };
 
         recognition.onend = () => { stopListening(); };
-    } else {
-        alert('براؤزر وائس کو سپورٹ نہیں کرتا، کروم استعمال کریں۔');
     }
 
     function toggleVoice() {
@@ -133,39 +205,53 @@
     function stopListening() {
         isListening = false;
         document.getElementById('micBtn').classList.remove('listening');
-        document.getElementById('micBtn').innerText = '🎙️ وائس کمانڈ دیں';
+        document.getElementById('micBtn').innerText = '🎙️ Awaaz Se Rasta Poochhein';
     }
 
     function processCommand(cmd) {
-        const command = cmd.toLowerCase();
+        const text = cmd.toLowerCase();
 
-        if (command.includes('حال') || command.includes('راستے') || command.includes('روڈ') || command.includes('اپڈیٹ')) {
-            speakOut("اسلام آباد کے 80 میں سے 35 اہم راستے بند ہیں۔ نائنتھ ایونیو اور بلو ایریا بلاک ہیں۔ سری نگر ہائی وے کھلی ہے۔");
-            map.flyTo([33.6844, 73.0479], 12);
-        } 
-        else if (command.includes('نائنتھ') || command.includes('9th') || command.includes('بلو')) {
-            speakOut("نائنتھ ایونیو اور بلو ایریا پر بلاکیج ہے۔ وقت ضائع نہ کریں، متبادل سروس روڈ کا راستہ استعمال کریں۔");
-            map.flyTo([33.6685, 73.0551], 15);
-            ninetheAvenue.openPopup();
-        } 
-        else if (command.includes('سری نگر') || command.includes('ہائی وے')) {
-            speakOut("سری نگر ہائی وے اس وقت مکمل کھلی ہے اور ٹریفک روان دواں ہے۔");
-            map.flyTo([33.6701, 73.0189], 14);
-            srinagarHwy.openPopup();
-        } 
-        else {
-            speakOut("معذرت، میں سمجھی نہیں۔ آپ اسلام آباد کے روٹس کے بارے میں پوچھیں۔");
-        }
+        let match = null;
+        if (text.includes('مری') || text.includes('murree')) match = locationsDB['murree'];
+        else if (text.includes('لاہور') || text.includes('lahore') || text.includes('انارکلی')) match = locationsDB['lahore'];
+        else match = locationsDB['islamabad'];
+
+        // Dynamic 3D Camera Navigation Animation
+        map.flyTo({
+            center: match.coords,
+            zoom: match.zoom,
+            pitch: 65,
+            bearing: -20,
+            speed: 1.2,
+            curve: 1.4
+        });
+
+        // Display Route Calculation UI Card
+        const routeCard = document.getElementById('routeDetails');
+        routeCard.style.display = 'block';
+        let html = `<b>📍 ${match.name}</b><br>`;
+        match.routes.forEach(r => {
+            html += `<div style="margin-top:4px;"><b>${r.name}:</b> ${r.distance} | ${r.time} <br><small>${r.status}</small></div>`;
+        });
+        routeCard.innerHTML = html;
+
+        // Speak Natural Voice
+        speakOut(match.speech);
     }
 
+    // High Natural Pitch & Speed Voice Synthesizer
     function speakOut(text) {
         const synth = window.speechSynthesis;
+        synth.cancel(); // Clear previous speech queue
+
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = 'ur-PK';
-        utterance.rate = 0.9;
+        utterance.rate = 0.92; // Natural human cadence rate
+        utterance.pitch = 1.05; // Slightly clear and crisp pitch
+        
         synth.speak(utterance);
     }
 </script>
 
 </body>
-    </html>
+</html>
