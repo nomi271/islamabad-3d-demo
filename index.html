@@ -3,56 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Super 4K Live Motion Navigation</title>
-    <!-- MapLibre GL 3D Engine -->
+    <title>Real Road Snap Navigation</title>
+    <!-- MapLibre Engine -->
     <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
     <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
     <style>
         body { margin: 0; padding: 0; background: #000; color: #fff; font-family: 'Segoe UI', Arial, sans-serif; overflow: hidden; }
         #map { position: absolute; top: 0; bottom: 0; width: 100%; height: 100vh; }
         
-        /* Floating HUD UI */
         .hud-panel {
             position: absolute;
             top: 12px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 10;
-            background: rgba(8, 15, 30, 0.92);
+            background: rgba(8, 15, 30, 0.95);
             backdrop-filter: blur(20px);
-            padding: 14px;
-            border-radius: 18px;
-            border: 1px solid rgba(0, 255, 204, 0.6);
-            box-shadow: 0 10px 35px rgba(0, 0, 0, 0.95);
-            width: 92%;
-            max-width: 400px;
-        }
-
-        .hud-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-        .hud-title { font-size: 13px; font-weight: 800; color: #00ffcc; letter-spacing: 0.5px; }
-        .live-tag { background: #ff0055; color: #fff; font-size: 9px; padding: 3px 8px; border-radius: 10px; font-weight: bold; animation: blink 1s infinite; }
-        
-        .mic-btn {
-            background: linear-gradient(135deg, #00ffcc 0%, #0088ff 100%);
-            color: #000;
-            border: none;
             padding: 12px;
-            font-size: 14px;
-            font-weight: bold;
-            border-radius: 25px;
-            cursor: pointer;
-            width: 100%;
-            box-shadow: 0 4px 15px rgba(0, 255, 204, 0.4);
-            margin-bottom: 10px;
+            border-radius: 16px;
+            border: 1px solid rgba(0, 255, 204, 0.6);
+            width: 92%;
+            max-width: 390px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.9);
         }
 
-        .route-card {
-            background: rgba(0, 0, 0, 0.6);
-            padding: 10px;
-            border-radius: 12px;
-            border: 1px solid rgba(0, 255, 204, 0.3);
-            margin-top: 5px;
-        }
+        .hud-title { font-size: 13px; font-weight: bold; color: #00ffcc; text-align: center; margin-bottom: 8px; }
 
         .route-option {
             display: flex;
@@ -64,7 +39,6 @@
             border-radius: 8px;
             border-left: 4px solid #00ffcc;
         }
-        .route-option.alt { border-left-color: #ffaa00; }
 
         .nav-btn {
             background: #00ffcc;
@@ -78,196 +52,134 @@
             box-shadow: 0 0 10px rgba(0, 255, 204, 0.6);
         }
 
-        /* Moving Vehicle Marker */
-        .car-marker {
-            width: 16px;
-            height: 16px;
-            background: #00ffcc;
-            border: 2px solid #ffffff;
-            border-radius: 50%;
-            box-shadow: 0 0 15px #00ffcc, 0 0 30px #00ffcc;
+        /* Google Map Style Navigation Cursor */
+        .nav-cursor {
+            width: 24px;
+            height: 24px;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%2300ffcc"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg>');
+            background-size: cover;
+            filter: drop-shadow(0px 0px 8px #00ffcc);
         }
-
-        .car-user {
-            width: 20px;
-            height: 20px;
-            background: #ff0055;
-            border: 3px solid #ffffff;
-            border-radius: 50%;
-            box-shadow: 0 0 20px #ff0055;
-        }
-
-        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
     </style>
 </head>
 <body>
 
 <div class="hud-panel">
-    <div class="hud-header">
-        <div class="hud-title">⚡ ULTRA 4K LIVE NAVIGATION ENGINE</div>
-        <div class="live-tag">LIVE TRAFFIC SIMULATION</div>
+    <div class="hud-title">🗺️ ISLAMABAD REAL-ROAD NAVIGATION</div>
+
+    <div class="route-option">
+        <div>
+            <b style="color: #fff; font-size: 12px;">Srinagar Highway</b><br>
+            <small style="color: #00ffcc;">Real Road Alignment</small>
+        </div>
+        <button class="nav-btn" onclick="drawRealRoadRoute([72.8800, 33.6100], [73.0551, 33.7077], '#00ffcc')">NAVIGATE</button>
     </div>
 
-    <button class="mic-btn" id="micBtn" onclick="startDemoRoute()">🗺️ Faisal Town Se Centaurus Route Shuru Karein</button>
-
-    <div class="route-card" id="routeBox">
-        <b style="color: #00ffcc; font-size: 12px;">📍 Select Route (Faisal Town to Centaurus):</b>
-        
-        <div class="route-option">
-            <div>
-                <b style="color: #fff; font-size: 12px;">Srinagar Highway</b><br>
-                <small style="color: #00ffcc;">20 Mins (18 km) • Fastest Route</small>
-            </div>
-            <button class="nav-btn" onclick="activateNavigation('srinagar')">NAVIGATE</button>
+    <div class="route-option" style="border-left-color: #ffaa00;">
+        <div>
+            <b style="color: #fff; font-size: 12px;">GT Road / Highway</b><br>
+            <small style="color: #ffaa00;">Alternate Real Route</small>
         </div>
-
-        <div class="route-option alt">
-            <div>
-                <b style="color: #fff; font-size: 12px;">GT Road / Expressway</b><br>
-                <small style="color: #ffaa00;">37 Mins (28 km) • Moderate Traffic</small>
-            </div>
-            <button class="nav-btn" style="background:#ffaa00;" onclick="activateNavigation('gt')">NAVIGATE</button>
-        </div>
+        <button class="nav-btn" style="background:#ffaa00;" onclick="drawRealRoadRoute([72.9500, 33.6000], [73.0551, 33.7077], '#ffaa00')">NAVIGATE</button>
     </div>
 </div>
 
 <div id="map"></div>
 
 <script>
-    // Ultra High Resolution Satellite Tiles
+    // Google Satellite HD Map
     const map = new maplibregl.Map({
         container: 'map',
         style: {
             'version': 8,
             'sources': {
-                'ultra-sat': {
+                'google-sat': {
                     'type': 'raster',
-                    'tiles': ['https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}'], // Google Hybrid HD
+                    'tiles': ['https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}'],
                     'tileSize': 256,
-                    'maxzoom': 21
+                    'maxzoom': 20
                 }
             },
             'layers': [{
-                'id': 'sat-layer',
+                'id': 'google-sat-layer',
                 'type': 'raster',
-                'source': 'ultra-sat',
+                'source': 'google-sat',
                 'minzoom': 0,
-                'maxzoom': 21
+                'maxzoom': 20
             }]
         },
-        center: [72.9300, 33.6300], // Faisal Town / Tarnol Area
-        zoom: 12,
-        pitch: 55,
-        bearing: -10
+        center: [72.9800, 33.6600],
+        zoom: 12.5,
+        pitch: 45
     });
 
-    // Coordinates for Routes (Faisal Town to Centaurus)
-    const srinagarRouteCoords = [
-        [72.8800, 33.6100], // Faisal Town
-        [72.9500, 33.6350], // Tarnol Interchange
-        [73.0100, 33.6700], // Srinagar Hwy
-        [73.0551, 33.7077]  // Centaurus Mall
-    ];
-
-    const gtRouteCoords = [
-        [72.8800, 33.6100], // Faisal Town
-        [72.9800, 33.6000], // GT Road
-        [73.0700, 33.6500], // Expressway
-        [73.0551, 33.7077]  // Centaurus Mall
-    ];
-
-    let liveCarMarker = null;
-    let animProgress = 0;
-    let activeRoutePath = srinagarRouteCoords;
+    let navMarker = null;
 
     map.on('load', () => {
-        // Draw Srinagar Highway Route Line (Google Maps Style Blue Line)
-        map.addSource('route-srinagar', {
+        // Prepare GeoJSON Source for exact road snapping
+        map.addSource('real-road-source', {
             'type': 'geojson',
             'data': {
                 'type': 'Feature',
-                'geometry': { 'type': 'LineString', 'coordinates': srinagarRouteCoords }
+                'geometry': { 'type': 'LineString', 'coordinates': [] }
             }
         });
 
+        // Add Google-like Glow Line on top of roads
         map.addLayer({
-            'id': 'layer-srinagar',
+            'id': 'real-road-layer',
             'type': 'line',
-            'source': 'route-srinagar',
+            'source': 'real-road-source',
             'layout': { 'line-join': 'round', 'line-cap': 'round' },
             'paint': {
-                'line-color': '#0066ff',
-                'line-width': 8,
-                'line-opacity': 0.85
+                'line-color': '#00ffcc',
+                'line-width': 7,
+                'line-opacity': 0.9
             }
         });
 
-        // Add Live Traffic Moving Vehicle
-        const carEl = document.createElement('div');
-        carEl.className = 'car-user';
-        liveCarMarker = new maplibregl.Marker(carEl)
-            .setLngLat(srinagarRouteCoords[0])
-            .addTo(map);
-
-        // Traffic Simulation Loop (Live Vehicles Moving)
-        animateTraffic();
+        // Add Navigation Cursor Marker
+        const cursorEl = document.createElement('div');
+        cursorEl.className = 'nav-cursor';
+        navMarker = new maplibregl.Marker(cursorEl).setLngLat([72.8800, 33.6100]).addTo(map);
     });
 
-    function activateNavigation(routeType) {
-        let routeCoords = routeType === 'srinagar' ? srinagarRouteCoords : gtRouteCoords;
-        activeRoutePath = routeCoords;
-        animProgress = 0;
+    // Fetch Actual Road Routing from OpenStreetMap Routing API
+    async function drawRealRoadRoute(startCoords, endCoords, lineColor) {
+        const url = `https://router.project-osrm.org/route/v1/driving/${startCoords[0]},${startCoords[1]};${endCoords[0]},${endCoords[1]}?overview=full&geometries=geojson`;
 
-        // Change Route Line Color dynamically
-        if (map.getLayer('layer-srinagar')) {
-            map.setPaintProperty('layer-srinagar', 'line-color', routeType === 'srinagar' ? '#00ffcc' : '#ffaa00');
+        try {
+            const response = await fetch(url);
+            const data = await response.json();
+
+            if (data.routes && data.routes.length > 0) {
+                const routeGeometry = data.routes[0].geometry;
+
+                // Update Line to follow EXACT roads
+                map.getSource('real-road-source').setData({
+                    'type': 'Feature',
+                    'geometry': routeGeometry
+                });
+
+                map.setPaintProperty('real-road-layer', 'line-color', lineColor);
+
+                // Move Navigation Marker to starting point of road
+                navMarker.setLngLat(routeGeometry.coordinates[0]);
+
+                // Smoothly Zoom & Tilt onto the starting road
+                map.flyTo({
+                    center: routeGeometry.coordinates[0],
+                    zoom: 15.5,
+                    pitch: 60,
+                    bearing: 20,
+                    speed: 1.2
+                });
+            }
+        } catch (error) {
+            console.error("Routing error:", error);
         }
-
-        // Camera Follows Route (3D Navigation Zoom Mode)
-        map.flyTo({
-            center: routeCoords[1],
-            zoom: 15.5,
-            pitch: 65,
-            bearing: 30,
-            speed: 1.2
-        });
-
-        // Speech Feedback
-        const speech = new SpeechSynthesisUtterance(
-            routeType === 'srinagar' 
-            ? "Srinagar Highway par Navigation shuru kar di gayi hai. Rasta bilkul saaf hai." 
-            : "GT Road par navigation shuru ho gayi hai, 37 minut lagayenge."
-        );
-        speech.lang = 'ur-PK';
-        window.speechSynthesis.speak(speech);
-    }
-
-    function animateTraffic() {
-        if (liveCarMarker && activeRoutePath) {
-            animProgress += 0.0015;
-            if (animProgress > 1) animProgress = 0;
-
-            // Interpolate position along route
-            const totalPoints = activeRoutePath.length - 1;
-            const pointIndex = Math.floor(animProgress * totalPoints);
-            const nextIndex = Math.min(pointIndex + 1, totalPoints);
-            const subProgress = (animProgress * totalPoints) - pointIndex;
-
-            const p1 = activeRoutePath[pointIndex];
-            const p2 = activeRoutePath[nextIndex];
-
-            const lng = p1[0] + (p2[0] - p1[0]) * subProgress;
-            const lat = p1[1] + (p2[1] - p1[1]) * subProgress;
-
-            liveCarMarker.setLngLat([lng, lat]);
-        }
-        requestAnimationFrame(animateTraffic);
-    }
-
-    function startDemoRoute() {
-        activateNavigation('srinagar');
     }
 </script>
 
 </body>
-            </html>
+    </html>
