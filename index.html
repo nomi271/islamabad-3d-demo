@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ur">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Islamabad 3D Voice Navigation - Zero Investment Demo</title>
+    <!-- Mapbox 3D Free CDN -->
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
+    <style>
+        body { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #000; color: #fff; }
+        #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+        
+        /* Control Panel Overlay */
+        .overlay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 10;
+            background: rgba(0, 0, 0, 0.85);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #00ffcc;
+            box-shadow: 0 0 15px rgba(0, 255, 204, 0.3);
+            max-width: 350px;
+        }
+        h2 { margin: 0 0 10px 0; font-size: 18px; color: #00ffcc; }
+        p { font-size: 13px; line-height: 1.5; color: #ddd; }
+        
+        .mic-btn {
+            background: #00ffcc;
+            color: #000;
+            border: none;
+            padding: 12px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 25px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+            transition: 0.3s;
+        }
+        .mic-btn:hover { background: #00cca3; box-shadow: 0 0 10px #00ffcc; }
+        .mic-btn.listening { background: #ff3366; color: #fff; animation: pulse 1.5s infinite; }
+        
+        .status-box {
+            margin-top: 12px;
+            padding: 10px;
+            background: #111;
+            border-radius: 6px;
+            font-size: 12px;
+            border-left: 3px solid #00ffcc;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 51, 102, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(255, 51, 102, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 51, 102, 0); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="overlay">
+    <h2>3D Traffic Voice System</h2>
+    <p>اسلام آباد روٹ نیویگیشن (زیرو کاسٹ ڈیمو)</p>
+    
+    <button class="mic-btn" id="micBtn" onclick="toggleVoice()">🎙️ وائس کمانڈ دیں</button>
+    
+    <div class="status-box" id="status">
+        سیٹ اپ ریڈی ہے۔ بٹن دبا کر بولیں: <b>"راستوں کا کیا حال ہے؟"</b> یا <b>"نائنتھ ایونیو جانا ہے"</b>
+    </div>
+</div>
+
+<div id="map"></div>
+
+<script>
+    // Free Mapbox Public Token for 3D Demo
+    mapboxgl.accessToken = 'pk.eyJ1IjoiZGVtby11c2VyLTMkIiwiYSI6ImNsa3ZwZjAweTBkZWczZW1yZXhhYnJpd2MifQ.XYZ-demo-token-placeholder';
+
+    // Initialize 3D Map focused on Islamabad
+    const map = new mapboxgl.Map({
+        container: 'map',
+        style: 'mapbox://styles/mapbox/dark-v11',
+        center: [73.0479, 33.6844], // Islamabad Coordinates
+        zoom: 13,
+        pitch: 60, // 3D Pitch View
+        bearing: -17.6
+    });
+
+    // Add 3D Buildings & Terrain on load
+    map.on('load', () => {
+        map.addSource('mapbox-dem', {
+            'type': 'raster-dem',
+            'url': 'mapbox://mapbox.mapbox-terrain-dem-v1',
+            'tileSize': 512,
+            'maxzoom': 14
+        });
+        map.setTerrain({ 'source': 'mapbox-dem', 'exaggeration': 1.5 });
+
+        // Add 3D building layer
+        const layers = map.getStyle().layers;
+        const labelLayerId = layers.find(layer => layer.type === 'symbol' && layer.layout['text-field']).id;
+
+        map.addLayer({
+            'id': 'add-3d-buildings',
+            'source': 'composite',
+            'source-layer': 'building',
+            'filter': ['==', 'extrude', 'true'],
+            'type': 'fill-extrusion',
+            'minzoom': 12,
+            'paint': {
+                'fill-extrusion-color': '#222',
+                'fill-extrusion-height': ['get', 'height'],
+                'fill-extrusion-base': ['get', 'min_height'],
+                'fill-extrusion-opacity': 0.8
+            }
+        }, labelLayerId);
+    });
+
+    // Voice AI Recognition Engine (Browser Native - Zero Cost)
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition;
+    let isListening = false;
+
+    if (SpeechRecognition) {
+        recognition = new SpeechRecognition();
+        recognition.lang = 'ur-PK'; // Urdu / Local accent recognition
+        recognition.continuous = false;
+
+        recognition.onstart = () => {
+            isListening = true;
+            document.getElementById('micBtn').classList.add('listening');
+            document.getElementById('micBtn').innerText = '👂 سن رہا ہوں... بولیں';
+            document.getElementById('status').innerText = 'آواز ریکارڈ ہو رہی ہے...';
+        };
+
+        recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            document.getElementById('status').innerText = `آپ نے کہا: "${transcript}"`;
+            processCommand(transcript);
+        };
+
+        recognition.onerror = () => {
+            document.getElementById('status').innerText = 'آواز سمجھ نہیں آئی، دوبارہ کوشش کریں۔';
+            stopListening();
+        };
+
+        recognition.onend = () => {
+            stopListening();
+        };
+    } else {
+        alert('آپ کا براؤزر وائس کمانڈ کو سپورٹ نہیں کرتا۔ Chrome یا Edge استعمال کریں۔');
+    }
+
+    function toggleVoice() {
+        if (!isListening) {
+            recognition.start();
+        } else {
+            recognition.stop();
+        }
+    }
+
+    function stopListening() {
+        isListening = false;
+        document.getElementById('micBtn').classList.remove('listening');
+        document.getElementById('micBtn').innerText = '🎙️ وائس کمانڈ دیں';
+    }
+
+    // Process Driver Commands & Trigger 3D Map Movement
+    function processCommand(cmd) {
+        const command = cmd.toLowerCase();
+
+        if (command.includes('حال') || command.includes('راستے') || command.includes('روڈ')) {
+            speakOut("اسلام آباد کے 80 میں سے 35 اہم ایونیوز پر بلاکیج ہے۔ نائنتھ ایونیو اور بلو ایریا بند ہیں۔ متبادل راستہ استعمال کریں۔");
+            // Highlight Islamabad Overhead 3D View
+            map.flyTo({ center: [73.0479, 33.6844], zoom: 12, pitch: 45 });
+        } 
+        else if (command.includes('نائنتھ') || command.includes('9th') || command.includes('بلو ایریا')) {
+            speakOut("نائنتھ ایونیو پر کنٹینرز موجود ہیں اور یہ مکمل بند ہے۔ وقت ضائع نہ کریں، سروس روڈ کا متبادل راستہ 3D میپ پر دکھایا جا رہا ہے۔");
+            // Fly to 9th Avenue 3D location
+            map.flyTo({ center: [73.0551, 33.6685], zoom: 15, pitch: 70, bearing: 30 });
+        } 
+        else if (command.includes('سری نگر') || command.includes('ہائی وے')) {
+            speakOut("سری نگر ہائی وے اس وقت مکمل کھلی ہے اور ٹریفک کی روانی بہترین ہے۔");
+            // Fly to Srinagar Highway
+            map.flyTo({ center: [73.0189, 33.6701], zoom: 14, pitch: 60 });
+        } 
+        else {
+            speakOut("معذرت، میں سمجھی نہیں۔ آپ اسلام آباد کے روٹس یا بند راستوں کے بارے میں پوچھ سکتے ہیں۔");
+        }
+    }
+
+    // Voice Response Output (Text-To-Speech - Zero Cost)
+    function speakOut(text) {
+        const synth = window.speechSynthesis;
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'ur-PK';
+        utterance.rate = 0.9;
+        synth.speak(utterance);
+    }
+</script>
+
+</body>
+  </html>
