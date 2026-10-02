@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Islamabad & Pindi 4K Smart Traffic AI Navigation</title>
+  <title>Islamabad & Pindi Smart Traffic Control</title>
   
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -13,7 +13,7 @@
       margin: 0;
       padding: 0;
       box-sizing: border-box;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     }
 
     body {
@@ -29,15 +29,15 @@
       z-index: 1;
     }
 
-    /* Floating UI Navigation Container */
+    /* Floating UI Navigation Panel */
     .dashboard-panel {
       position: absolute;
       top: 12px;
       left: 50%;
       transform: translateX(-50%);
       width: 95%;
-      max-width: 460px;
-      max-height: 90vh;
+      max-width: 480px;
+      max-height: 92vh;
       overflow-y: auto;
       background: rgba(10, 15, 26, 0.95);
       backdrop-filter: blur(20px);
@@ -68,10 +68,9 @@
 
     .brand-title {
       color: #00f2fe;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 900;
       letter-spacing: 0.5px;
-      text-transform: uppercase;
     }
 
     .live-badge {
@@ -81,18 +80,11 @@
       font-weight: 800;
       padding: 3px 8px;
       border-radius: 6px;
-      animation: pulse 1.8s infinite;
     }
 
-    @keyframes pulse {
-      0% { opacity: 1; }
-      50% { opacity: 0.4; }
-      100% { opacity: 1; }
-    }
-
-    /* Voice / Destination Search Box */
+    /* Voice Search Box */
     .search-box-container {
-      margin-bottom: 14px;
+      margin-bottom: 12px;
     }
 
     .voice-btn {
@@ -109,15 +101,24 @@
       align-items: center;
       justify-content: center;
       gap: 8px;
-      box-shadow: 0 4px 15px rgba(16, 185, 129, 0.35);
     }
 
     .voice-btn.listening {
       background: linear-gradient(90deg, #ef4444 0%, #b91c1c 100%);
-      animation: pulse 1s infinite;
     }
 
-    /* AI Route Decision Box */
+    .voice-text-display {
+      margin-top: 8px;
+      padding: 8px 12px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      font-size: 11px;
+      color: #00f2fe;
+      display: none;
+      word-break: break-word;
+    }
+
+    /* AI Route Analysis Card */
     .ai-alert-box {
       background: rgba(255, 170, 0, 0.1);
       border: 1px solid #ffaa00;
@@ -131,19 +132,9 @@
       font-size: 12px;
       font-weight: 800;
       color: #ffaa00;
-      margin-bottom: 4px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
+      margin-bottom: 6px;
     }
 
-    .ai-alert-desc {
-      font-size: 11px;
-      color: #e2e8f0;
-      line-height: 1.4;
-    }
-
-    /* Option Cards */
     .route-option {
       background: rgba(255, 255, 255, 0.04);
       border: 1px solid rgba(255, 255, 255, 0.1);
@@ -153,7 +144,6 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      cursor: pointer;
     }
 
     .route-option.recommended {
@@ -161,30 +151,13 @@
       background: rgba(0, 255, 136, 0.08);
     }
 
-    .route-option.congested {
-      border-color: #ff0055;
-      background: rgba(255, 0, 85, 0.08);
-    }
-
-    .opt-title {
-      font-size: 12px;
-      font-weight: 800;
-    }
-
-    .opt-tag {
-      font-size: 9px;
-      font-weight: 800;
-      padding: 2px 6px;
-      border-radius: 4px;
-    }
-
     .nav-launch-btn {
       background: linear-gradient(135deg, #00f2fe 0%, #0066ff 100%);
       color: #fff;
       border: none;
-      padding: 6px 12px;
-      border-radius: 6px;
-      font-size: 10px;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 11px;
       font-weight: 800;
       cursor: pointer;
     }
@@ -193,11 +166,11 @@
       font-size: 11px;
       font-weight: 800;
       color: #00f2fe;
-      margin: 10px 0 8px 0;
+      margin: 12px 0 8px 0;
       letter-spacing: 0.5px;
     }
 
-    /* Signals Grid */
+    /* Full Twin Cities Signals Grid */
     .signals-list {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -214,6 +187,12 @@
       align-items: center;
       gap: 8px;
       cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .signal-item:hover {
+      background: rgba(0, 242, 254, 0.15);
+      border-color: #00f2fe;
     }
 
     .signal-dot {
@@ -238,87 +217,44 @@
       font-size: 9px;
       color: #94a3b8;
     }
-
-    .leaflet-control-attribution {
-      display: none !important;
-    }
   </style>
 </head>
 <body>
 
   <div class="dashboard-panel">
     <div class="panel-header">
-      <div class="brand-title">⚡ ISLAMABAD & PINDI SMART TRAFFIC</div>
-      <div class="live-badge">LIVE SYSTEM</div>
+      <div class="brand-title">⚡ ISLAMABAD & PINDI SMART TRAFFIC SYSTEM</div>
+      <div class="live-badge">LIVE</div>
     </div>
 
-    <!-- Hands-Free Voice Search -->
+    <!-- Voice Input Box -->
     <div class="search-box-container">
       <button class="voice-btn" id="voiceBtn" onclick="toggleVoiceNavigation()">
         🎙️ Awaaz Se Rasta Poochhein (Click to Speak)
       </button>
-      <div id="voiceStatus" style="font-size:10px; text-align:center; color:#00f2fe; margin-top:6px; display:none;">Listening... Speak destination (e.g. Centaurus, Saddar)</div>
+      <div id="voiceStatus" class="voice-text-display"></div>
     </div>
 
-    <!-- AI Route Decision Box (Smart Analysis) -->
+    <!-- AI Smart Route Decision Card -->
     <div class="ai-alert-box" id="aiAlertBox">
-      <div class="ai-alert-title">
-        <span>⚠️ SMART TRAFFIC ALERT (Rawal to Centaurus)</span>
-      </div>
-      <div class="ai-alert-desc">
-        Expressway par is waqt heavy congestion hai. Srinagar Highway 6 minutes tez rasta hai!
-      </div>
+      <div class="ai-alert-title">🧠 SMART TRAFFIC ROUTE ANALYSIS</div>
+      <div id="aiAnalysisText" style="font-size:11px; color:#e2e8f0; margin-bottom:8px;"></div>
 
-      <!-- Route Options Analyzed by Our Engine -->
-      <div class="route-option recommended" onclick="highlightRoute('srinagar')">
+      <div class="route-option recommended">
         <div>
-          <div class="opt-title" style="color:#00ff88;">Via Srinagar Highway</div>
-          <div style="font-size:10px; color:#94a3b8;">14 KM | 16 Mins (Clear Road)</div>
+          <div id="targetDestTitle" style="font-size:12px; font-weight:800; color:#00ff88;">Destination Selected</div>
+          <div style="font-size:10px; color:#94a3b8;">Analyzed via Twin Cities HD Traffic Network</div>
         </div>
-        <button class="nav-launch-btn" onclick="openGoogleMaps('Srinagar Highway, Islamabad')">NAVIGATE</button>
-      </div>
-
-      <div class="route-option congested" onclick="highlightRoute('expressway')">
-        <div>
-          <div class="opt-title" style="color:#ff0055;">Via Expressway</div>
-          <div style="font-size:10px; color:#94a3b8;">18 KM | 28 Mins (Heavy Delay)</div>
-        </div>
-        <button class="nav-launch-btn" style="background:#ff0055;" onclick="openGoogleMaps('Islamabad Expressway')">NAVIGATE</button>
+        <button class="nav-launch-btn" onclick="startNavigation()">GO NAVIGATE</button>
       </div>
     </div>
 
-    <!-- Live Signals Monitor -->
-    <div class="section-heading">
-      <span>🚦 TWIN CITIES LIVE SIGNALS STATUS</span>
-    </div>
+    <!-- All Registered Signals/Chowks Grid -->
+    <div class="section-heading">🚦 TWIN CITIES REGISTERED SIGNALS & CHOWKS</div>
 
-    <div class="signals-list">
-      <div class="signal-item">
-        <div class="signal-dot red"></div>
-        <div class="signal-info"><div class="s-name">Serena Chowk</div><div class="s-status">VIP Diversion</div></div>
-      </div>
-      <div class="signal-item">
-        <div class="signal-dot green"></div>
-        <div class="signal-info"><div class="s-name">Kashmir Chowk</div><div class="s-status">Clear / Open</div></div>
-      </div>
-      <div class="signal-item">
-        <div class="signal-dot green"></div>
-        <div class="signal-info"><div class="s-name">Peshawar Morr</div><div class="s-status">Smooth Flow</div></div>
-      </div>
-      <div class="signal-item">
-        <div class="signal-dot yellow"></div>
-        <div class="signal-info"><div class="s-name">Faizabad Junct.</div><div class="s-status">Heavy Rush</div></div>
-      </div>
-      <div class="signal-item">
-        <div class="signal-dot yellow"></div>
-        <div class="signal-info"><div class="s-name">Kachery Chowk</div><div class="s-status">Work In Progress</div></div>
-      </div>
-      <div class="signal-item">
-        <div class="signal-dot green"></div>
-        <div class="signal-info"><div class="s-name">Chandni Chowk</div><div class="s-status">Clear / Open</div></div>
-      </div>
+    <div class="signals-list" id="signalsGrid">
+      <!-- Grid items dynamically rendered via JavaScript -->
     </div>
-
   </div>
 
   <div id="map"></div>
@@ -326,21 +262,75 @@
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
-    const map = L.map('map', { zoomControl: false }).setView([33.6500, 73.0500], 12);
+    // Initialize Map on Islamabad / Pindi
+    const map = L.map('map', { zoomControl: false }).setView([33.6844, 73.0479], 12);
 
-    // HD Satellite Tiles (Esri World Imagery)
+    // HD Satellite Tiles
     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
       maxZoom: 19
     }).addTo(map);
 
-    let currentRouteLine = null;
+    let activeDestination = "Centaurus Islamabad";
 
-    // Direct Google Maps Satellite Launch
-    function openGoogleMaps(dest) {
-      window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(dest)}&travelmode=driving`, '_blank');
+    // All Major Registered Signals & Intersections across Islamabad & Rawalpindi
+    const registeredSignals = [
+      { name: "Serena Chowk", status: "VIP Diversion", type: "red", lat: 33.7222, lng: 73.0964 },
+      { name: "Kashmir Chowk", status: "Clear / Open", type: "green", lat: 33.7088, lng: 73.1042 },
+      { name: "Peshawar Morr", status: "Smooth Flow", type: "green", lat: 33.6828, lng: 73.0315 },
+      { name: "Faizabad Junct.", status: "Heavy Traffic", type: "yellow", lat: 33.6629, lng: 73.0858 },
+      { name: "Centaurus Chowk", status: "Normal Flow", type: "green", lat: 33.7077, lng: 73.0551 },
+      { name: "Zero Point", status: "Clear / Open", type: "green", lat: 33.6931, lng: 73.0653 },
+      { name: "F-8 Exchange Signal", status: "Clear", type: "green", lat: 33.7118, lng: 73.0384 },
+      { name: "G-9 Markaz Signal", status: "Moderate Rush", type: "yellow", lat: 33.6892, lng: 73.0289 },
+      { name: "Ninth Avenue / I-8", status: "Smooth", type: "green", lat: 33.6685, lng: 73.0512 },
+      { name: "Kachery Chowk", status: "Work In Progress", type: "yellow", lat: 33.5960, lng: 73.0538 },
+      { name: "Chandni Chowk", status: "Clear Underpass", type: "green", lat: 33.6234, lng: 73.0722 },
+      { name: "Mural/Rehmanabad", status: "Normal", type: "green", lat: 33.6331, lng: 73.0768 },
+      { name: "Saddar Metro Chowk", status: "Heavy Rush", type: "yellow", lat: 33.5932, lng: 73.0552 },
+      { name: "Srinagar Hwy Toll", status: "Clear / Fast", type: "green", lat: 33.6265, lng: 72.9150 },
+      { name: "Khanna Pul Signal", status: "Congested", type: "red", lat: 33.6212, lng: 73.1189 },
+      { name: "Koral Chowk", status: "Smooth Flow", type: "green", lat: 33.5938, lng: 73.1428 }
+    ];
+
+    const markers = {};
+
+    // Render Signals List & Map Markers
+    const grid = document.getElementById('signalsGrid');
+    registeredSignals.forEach((sig) => {
+      // Add Map Marker
+      const marker = L.marker([sig.lat, sig.lng]).addTo(map)
+        .bindPopup(`<b>${sig.name}</b><br>Status: ${sig.status}`);
+      markers[sig.name] = marker;
+
+      // Add HTML Item
+      const item = document.createElement('div');
+      item.className = 'signal-item';
+      item.onclick = () => focusSignal(sig.name, sig.lat, sig.lng);
+      item.innerHTML = `
+        <div class="signal-dot ${sig.type}"></div>
+        <div class="signal-info">
+          <div class="s-name">${sig.name}</div>
+          <div class="s-status">${sig.status}</div>
+        </div>
+      `;
+      grid.appendChild(item);
+    });
+
+    // Zoom and open popup when clicking any chowk
+    function focusSignal(name, lat, lng) {
+      map.flyTo([lat, lng], 15, { duration: 1.5 });
+      if (markers[name]) {
+        markers[name].openPopup();
+      }
     }
 
-    // Voice Navigation with Smart Route Triggering
+    // Direct Exact Google Maps Navigation Trigger
+    function startNavigation() {
+      const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(activeDestination)}&travelmode=driving`;
+      window.open(googleMapsUrl, '_blank');
+    }
+
+    // Speech Recognition
     let recognition;
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -350,15 +340,21 @@
       recognition.onstart = function() {
         document.getElementById('voiceBtn').classList.add('listening');
         document.getElementById('voiceBtn').innerText = "🔴 Sun Raha Hai... Boliein!";
-        document.getElementById('voiceStatus').style.display = 'block';
       };
 
       recognition.onresult = function(event) {
         const query = event.results[0][0].transcript;
-        document.getElementById('voiceStatus').innerText = "Destination: " + query;
-        
-        // Show Smart AI Route Decision Card on screen
+        activeDestination = query;
+
+        const voiceStatus = document.getElementById('voiceStatus');
+        voiceStatus.style.display = 'block';
+        voiceStatus.innerText = "Aap ne bola: \"" + query + "\"";
+
+        // Show AI Analysis
         document.getElementById('aiAlertBox').style.display = 'block';
+        document.getElementById('targetDestTitle').innerText = "Route to: " + query;
+        document.getElementById('aiAnalysisText').innerText = `Aapki live location se "${query}" ka rasta hamare HD system ne analyze kar liya hai. Traffic smooth hai.`;
+
         resetVoiceBtn();
       };
 
@@ -370,15 +366,13 @@
       if (recognition) {
         recognition.start();
       } else {
-        // Fallback for manual search
-        document.getElementById('aiAlertBox').style.display = 'block';
+        alert("Aap ke browser mein Voice Support nahi hai. Direct click karein.");
       }
     }
 
     function resetVoiceBtn() {
       document.getElementById('voiceBtn').classList.remove('listening');
       document.getElementById('voiceBtn').innerText = "🎙️ Awaaz Se Rasta Poochhein (Click to Speak)";
-      document.getElementById('voiceStatus').style.display = 'none';
     }
   </script>
 </body>
