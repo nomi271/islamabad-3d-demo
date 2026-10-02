@@ -1,284 +1,379 @@
 <!DOCTYPE html>
-<html lang="ur">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Islamabad Ultra 4K Route Navigation</title>
-    <!-- MapLibre Engine -->
-    <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
-    <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
-    <style>
-        body { margin: 0; padding: 0; background: #080B10; color: #fff; font-family: 'Segoe UI', system-ui, sans-serif; overflow: hidden; }
-        #map { position: absolute; top: 0; bottom: 0; width: 100%; height: 100vh; }
-        
-        /* Floating Dashboard HUD */
-        .hud-panel {
-            position: absolute;
-            top: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 10;
-            background: rgba(8, 14, 26, 0.95);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            padding: 12px 14px;
-            border-radius: 18px;
-            border: 1px solid rgba(0, 255, 204, 0.5);
-            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.9);
-            width: 92%;
-            max-width: 400px;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Islamabad & Pindi 4K Live Navigation & Signals</title>
+  
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
 
-        .hud-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-        .hud-title { font-size: 12px; font-weight: 800; color: #00ffcc; letter-spacing: 0.5px; text-transform: uppercase; }
-        .live-tag { background: #ff0055; color: #fff; font-size: 8px; padding: 3px 7px; border-radius: 10px; font-weight: bold; animation: blink 1s infinite; }
-        
-        /* Stats Dashboard Bar */
-        .stats-bar {
-            display: flex;
-            justify-content: space-between;
-            background: rgba(0, 0, 0, 0.65);
-            padding: 6px 8px;
-            border-radius: 10px;
-            font-size: 9px;
-            margin-bottom: 8px;
-            border: 1px solid rgba(0, 255, 204, 0.2);
-            text-align: center;
-        }
-        .stat-item span { display: block; font-weight: 800; font-size: 11px; margin-top: 1px; }
-        .stat-open { color: #00ffcc; }
-        .stat-closed { color: #ff3366; }
-        .stat-const { color: #ffbb00; }
+    body {
+      background-color: #080c14;
+      color: #ffffff;
+      height: 100vh;
+      overflow: hidden;
+    }
 
-        .mic-btn {
-            background: linear-gradient(135deg, #00ffcc 0%, #0088ff 100%);
-            color: #000;
-            border: none;
-            padding: 10px;
-            font-size: 12px;
-            font-weight: 800;
-            border-radius: 20px;
-            cursor: pointer;
-            width: 100%;
-            box-shadow: 0 4px 15px rgba(0, 255, 204, 0.35);
-            margin-bottom: 8px;
-        }
+    #map {
+      width: 100vw;
+      height: 100vh;
+      z-index: 1;
+    }
 
-        .route-card {
-            background: rgba(0, 0, 0, 0.45);
-            padding: 8px;
-            border-radius: 10px;
-            border: 1px solid rgba(0, 255, 204, 0.2);
-        }
+    /* Floating UI Navigation Container */
+    .dashboard-panel {
+      position: absolute;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 95%;
+      max-width: 460px;
+      max-height: 92vh;
+      overflow-y: auto;
+      background: rgba(10, 15, 26, 0.94);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(0, 242, 254, 0.25);
+      border-radius: 20px;
+      padding: 16px;
+      z-index: 1000;
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.85);
+    }
 
-        .route-option {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: rgba(255, 255, 255, 0.04);
-            padding: 8px;
-            margin-top: 5px;
-            border-radius: 8px;
-            border-left: 4px solid #00ffcc;
-        }
-        .route-option.alt { border-left-color: #ffaa00; }
+    /* Scrollbar styling for panel */
+    .dashboard-panel::-webkit-scrollbar {
+      width: 4px;
+    }
+    .dashboard-panel::-webkit-scrollbar-thumb {
+      background: #00f2fe;
+      border-radius: 4px;
+    }
 
-        .nav-btn {
-            background: #00ffcc;
-            color: #000;
-            border: none;
-            padding: 6px 12px;
-            font-size: 10px;
-            font-weight: 800;
-            border-radius: 14px;
-            cursor: pointer;
-            box-shadow: 0 0 10px rgba(0, 255, 204, 0.5);
-        }
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 8px;
+    }
 
-        /* Google Style Navigation Marker Cursor */
-        .nav-cursor {
-            width: 26px;
-            height: 26px;
-            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%2300ffcc"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg>');
-            background-size: cover;
-            filter: drop-shadow(0px 0px 8px #00ffcc);
-        }
+    .brand-title {
+      color: #00f2fe;
+      font-size: 15px;
+      font-weight: 900;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
 
-        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
-    </style>
+    .live-badge {
+      background: linear-gradient(45deg, #ff0055, #ff5500);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 6px;
+      animation: pulse 1.8s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.4; }
+      100% { opacity: 1; }
+    }
+
+    .stats-container {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 10px;
+      border-radius: 12px;
+      text-align: center;
+      margin-bottom: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .stat-card .value {
+      font-size: 16px;
+      font-weight: 800;
+    }
+
+    .stat-card .label {
+      font-size: 9px;
+      color: #94a3b8;
+      margin-top: 2px;
+    }
+
+    .section-heading {
+      font-size: 12px;
+      font-weight: 800;
+      color: #00f2fe;
+      margin: 12px 0 8px 0;
+      letter-spacing: 0.5px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Signals Grid */
+    .signals-list {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .signal-item {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      padding: 8px 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .signal-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      box-shadow: 0 0 8px currentColor;
+    }
+
+    .signal-dot.green { background-color: #00ff88; color: #00ff88; }
+    .signal-dot.red { background-color: #ff0055; color: #ff0055; }
+    .signal-dot.yellow { background-color: #ffaa00; color: #ffaa00; }
+
+    .signal-info .s-name {
+      font-size: 11px;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+
+    .signal-info .s-status {
+      font-size: 9px;
+      color: #94a3b8;
+    }
+
+    /* Route Cards */
+    .route-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .route-card.active {
+      border-color: #00f2fe;
+      background: rgba(0, 242, 254, 0.08);
+    }
+
+    .route-details .r-title {
+      font-size: 13px;
+      font-weight: 800;
+      color: #ffffff;
+    }
+
+    .route-details .r-desc {
+      font-size: 10px;
+      color: #00f2fe;
+      margin-top: 2px;
+      font-weight: 600;
+    }
+
+    .nav-btn {
+      background: linear-gradient(135deg, #00f2fe 0%, #0066ff 100%);
+      color: #ffffff;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0, 242, 254, 0.3);
+    }
+
+    .voice-btn {
+      width: 100%;
+      padding: 11px;
+      background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+      border: none;
+      border-radius: 10px;
+      color: white;
+      font-weight: 800;
+      font-size: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      margin-bottom: 12px;
+      box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+    }
+
+    .leaflet-control-attribution {
+      display: none !important;
+    }
+  </style>
 </head>
 <body>
 
-<div class="hud-panel">
-    <div class="hud-header">
-        <div class="hud-title">⚡ 4K ULTRA ROUTE NAVIGATION</div>
-        <div class="live-tag">LIVE SIMULATION</div>
-    </div>
-    
-    <!-- Top Stats Board -->
-    <div class="stats-bar">
-        <div class="stat-item">Total Roads<span>57</span></div>
-        <div class="stat-item stat-open">Khuli Hain<span>27</span></div>
-        <div class="stat-item stat-closed">Band Hain<span>20</span></div>
-        <div class="stat-item stat-const">Work In Progress<span>10</span></div>
+  <div class="dashboard-panel">
+    <div class="panel-header">
+      <div class="brand-title">⚡ 4K ULTRA ISLAMABAD & PINDI</div>
+      <div class="live-badge">LIVE SYSTEM</div>
     </div>
 
-    <button class="mic-btn" onclick="startNavigation('srinagar')">🎙️ Awaaz Se Rasta Poochhein</button>
+    <!-- Roads Live Stats -->
+    <div class="stats-container">
+      <div class="stat-card"><div class="value" style="color:#ffffff;">57</div><div class="label">Total Roads</div></div>
+      <div class="stat-card"><div class="value" style="color:#00ff88;">27</div><div class="label">Khuli Hain</div></div>
+      <div class="stat-card"><div class="value" style="color:#ff0055;">20</div><div class="label">Band Hain</div></div>
+      <div class="stat-card"><div class="value" style="color:#ffaa00;">10</div><div class="label">Work In Progress</div></div>
+    </div>
+
+    <button class="voice-btn" onclick="startVoice()">
+      🎙️ Awaaz Se Rasta Poochhein (Voice GPS)
+    </button>
+
+    <!-- Twin Cities Signals Live Monitor -->
+    <div class="section-heading">
+      <span>🚦 MAIN SIGNALS STATUS (ISLAMABAD & PINDI)</span>
+    </div>
+
+    <div class="signals-list">
+      <div class="signal-item">
+        <div class="signal-dot red"></div>
+        <div class="signal-info"><div class="s-name">Serena Chowk</div><div class="s-status">VIP Diversion</div></div>
+      </div>
+      <div class="signal-item">
+        <div class="signal-dot green"></div>
+        <div class="signal-info"><div class="s-name">Kashmir Chowk</div><div class="s-status">Clear / Open</div></div>
+      </div>
+      <div class="signal-item">
+        <div class="signal-dot green"></div>
+        <div class="signal-info"><div class="s-name">Peshawar Morr</div><div class="s-status">Smooth Traffic</div></div>
+      </div>
+      <div class="signal-item">
+        <div class="signal-dot yellow"></div>
+        <div class="signal-info"><div class="s-name">Faizabad Junct.</div><div class="s-status">Heavy Rush</div></div>
+      </div>
+      <div class="signal-item">
+        <div class="signal-dot green"></div>
+        <div class="signal-info"><div class="s-name">G-10 Signal</div><div class="s-status">Clear / Open</div></div>
+      </div>
+      <div class="signal-item">
+        <div class="signal-dot red"></div>
+        <div class="signal-info"><div class="s-name">Chandni Chowk</div><div class="s-status">Work In Progress</div></div>
+      </div>
+      <div class="signal-item">
+        <div class="signal-dot green"></div>
+        <div class="signal-info"><div class="s-name">6th Road Signal</div><div class="s-status">Clear / Open</div></div>
+      </div>
+      <div class="signal-item">
+        <div class="signal-dot yellow"></div>
+        <div class="signal-info"><div class="s-name">Kachery Chowk</div><div class="s-status">Slow Traffic</div></div>
+      </div>
+    </div>
+
+    <!-- Live Routes -->
+    <div class="section-heading">
+      <span>🗺️ POPULAR NAVIGATION ROUTES</span>
+    </div>
+
+    <div class="route-card active">
+      <div class="route-details">
+        <div class="r-title">Srinagar Highway</div>
+        <div class="r-desc">Faisal Town ➔ Centaurus Mall (18 KM | 20 Mins)</div>
+      </div>
+      <button class="nav-btn" onclick="openGoogleMaps(33.6150, 72.9300, 33.6980, 73.0580)">NAVIGATE</button>
+    </div>
 
     <div class="route-card">
-        <b style="color: #00ffcc; font-size: 11px;">📍 Faisal Town to Centaurus Mall:</b>
-        
-        <div class="route-option">
-            <div>
-                <b style="color: #fff; font-size: 11px;">Srinagar Highway</b><br>
-                <small style="color: #00ffcc;">18 KM | 20 Mins (FAST / NO RUSH)</small>
-            </div>
-            <button class="nav-btn" onclick="startNavigation('srinagar')">NAVIGATE</button>
-        </div>
-
-        <div class="route-option alt">
-            <div>
-                <b style="color: #fff; font-size: 11px;">GT Road / Expressway</b><br>
-                <small style="color: #ffaa00;">22 KM | 32 Mins (HEAVY TRAFFIC)</small>
-            </div>
-            <button class="nav-btn" style="background:#ffaa00;" onclick="startNavigation('gt')">NAVIGATE</button>
-        </div>
+      <div class="route-details">
+        <div class="r-title">Islamabad Expressway</div>
+        <div class="r-desc">Zero Point ➔ Rawat T-Chowk (24 KM | 28 Mins)</div>
+      </div>
+      <button class="nav-btn" onclick="openGoogleMaps(33.6938, 73.0652, 33.4981, 73.1950)">NAVIGATE</button>
     </div>
-</div>
 
-<div id="map"></div>
+    <div class="route-card">
+      <div class="route-details">
+        <div class="r-title">Murree Road (Pindi)</div>
+        <div class="r-desc">Faizabad ➔ Saddar Rawalpindi (9 KM | 18 Mins)</div>
+      </div>
+      <button class="nav-btn" style="background: linear-gradient(135deg, #ffaa00 0%, #ff5500 100%);" onclick="openGoogleMaps(33.6360, 73.0730, 33.5950, 73.0540)">NAVIGATE</button>
+    </div>
 
-<script>
-    // MapLibre Vector Map Engine
-    const map = new maplibregl.Map({
-        container: 'map',
-        style: {
-            'version': 8,
-            'sources': {
-                'carto-voyager': {
-                    'type': 'raster',
-                    'tiles': ['https://basemaps.cartocdn.com/rastertiles/voyager_labels_under/{z}/{x}/{y}@2x.png'],
-                    'tileSize': 256,
-                    'maxzoom': 20
-                }
-            },
-            'layers': [{
-                'id': 'base-layer',
-                'type': 'raster',
-                'source': 'carto-voyager',
-                'minzoom': 0,
-                'maxzoom': 20
-            }]
-        },
-        center: [72.9800, 33.6600],
-        zoom: 12,
-        pitch: 50
-    });
+  </div>
 
-    // Coordinates along actual roads
-    const srinagarWaypoints = [
-        [72.8850, 33.6150], // Faisal Town
-        [72.9320, 33.6280], // Tarnol Link Road
-        [72.9750, 33.6500], // Srinagar Hwy Entrance
-        [73.0180, 33.6750], // G-13 Junction
-        [73.0450, 33.6920], // Zero Point
-        [73.0551, 33.7077]  // Centaurus Mall
+  <div id="map"></div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    // Initialize Map with Islamabad/Pindi Center
+    const map = L.map('map', {
+      zoomControl: false
+    }).setView([33.6500, 73.0500], 12);
+
+    // High Resolution Satellite Tiles (Esri World Imagery)
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      maxZoom: 19
+    }).addTo(map);
+
+    // Srinagar Highway Coordinates
+    const srinagarRouteCoords = [
+      [33.6150, 72.9300],
+      [33.6250, 72.9500],
+      [33.6380, 72.9750],
+      [33.6500, 73.0000],
+      [33.6650, 73.0300],
+      [33.6850, 73.0500],
+      [33.6980, 73.0580]
     ];
 
-    const gtWaypoints = [
-        [72.8850, 33.6150], // Faisal Town
-        [72.9500, 33.5900], // GT Road
-        [73.0200, 33.6300], // Rawalpindi Link
-        [73.0700, 33.6700], // Expressway
-        [73.0551, 33.7077]  // Centaurus Mall
-    ];
+    // Glow Outer Line
+    L.polyline(srinagarRouteCoords, {
+      color: '#00f2fe',
+      weight: 10,
+      opacity: 0.45,
+      lineCap: 'round'
+    }).addTo(map);
 
-    let currentMarker = null;
+    // Core Inner Line
+    L.polyline(srinagarRouteCoords, {
+      color: '#00f2fe',
+      weight: 5,
+      opacity: 1.0,
+      lineCap: 'round'
+    }).addTo(map);
 
-    map.on('load', () => {
-        // GeoJSON source for real road line
-        map.addSource('route-source', {
-            'type': 'geojson',
-            'data': {
-                'type': 'Feature',
-                'geometry': { 'type': 'LineString', 'coordinates': [] }
-            }
-        });
-
-        // Glowing Road Polyline Layer
-        map.addLayer({
-            'id': 'route-layer',
-            'type': 'line',
-            'source': 'route-source',
-            'layout': { 'line-join': 'round', 'line-cap': 'round' },
-            'paint': {
-                'line-color': '#00ffcc',
-                'line-width': 7,
-                'line-opacity': 0.95
-            }
-        });
-
-        // Navigation Cursor
-        const el = document.createElement('div');
-        el.className = 'nav-cursor';
-        currentMarker = new maplibregl.Marker(el).setLngLat(srinagarWaypoints[0]).addTo(map);
-    });
-
-    // OSRM Routing Engine for Exact Snap-to-Road
-    async function loadSnappedRoute(waypoints, color) {
-        const coordsStr = waypoints.map(p => `${p[0]},${p[1]}`).join(';');
-        const url = `https://router.project-osrm.org/route/v1/driving/${coordsStr}?overview=full&geometries=geojson`;
-
-        try {
-            const res = await fetch(url);
-            const data = await res.json();
-
-            if (data.routes && data.routes[0]) {
-                const geom = data.routes[0].geometry;
-
-                // Update Line to fit road exactly
-                map.getSource('route-source').setData({
-                    'type': 'Feature',
-                    'geometry': geom
-                });
-
-                map.setPaintProperty('route-layer', 'line-color', color);
-
-                // Move Navigation Marker
-                const startPoint = geom.coordinates[0];
-                currentMarker.setLngLat(startPoint);
-
-                // Tilt and Zoom Camera on Road
-                map.flyTo({
-                    center: startPoint,
-                    zoom: 15.5,
-                    pitch: 60,
-                    bearing: 20,
-                    speed: 1.2
-                });
-            }
-        } catch (e) {
-            console.error("Routing Error:", e);
-        }
+    // Google Maps Navigation Launch Function
+    function openGoogleMaps(originLat, originLng, destLat, destLng) {
+      const url = `https://www.google.com/maps/dir/?api=1&origin=${originLat},${originLng}&destination=${destLat},${destLng}&travelmode=driving`;
+      window.open(url, '_blank');
     }
 
-    function startNavigation(type) {
-        if (type === 'srinagar') {
-            loadSnappedRoute(srinagarWaypoints, '#00ffcc');
-            speakUrdu("Srinagar Highway par navigation active kar di gayi hai.");
-        } else {
-            loadSnappedRoute(gtWaypoints, '#ffaa00');
-            speakUrdu("GT Road Expressway par navigation active kar di gayi hai.");
-        }
+    function startVoice() {
+      alert("Awaaz Se Rasta Poochhein System Activated! Boliein kahan jana hai?");
     }
-
-    function speakUrdu(text) {
-        window.speechSynthesis.cancel();
-        const msg = new SpeechSynthesisUtterance(text);
-        msg.lang = 'ur-PK';
-        window.speechSynthesis.speak(msg);
-    }
-</script>
-
+  </script>
 </body>
-        </html>
+    </html>
